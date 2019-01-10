@@ -1,0 +1,170 @@
+% !TEX encoding = UTF-8 Unicode
+\documentclass[11pt,a4paper]{article}
+\usepackage[dvips]{graphicx}
+\usepackage{amsmath}
+%\usepackage[dvips]{subeqnarray}
+\usepackage{ifthen}
+\usepackage[utf8x]{inputenc}
+
+%% Pour la numerotation des questions
+   \newcounter{trqu}
+   \setcounter{trqu}{1}
+   \newcommand{\newque}[1]{\noindent \textbf{\thetrqu.\ {#1}} \addtocounter{trqu}{1}}
+%% Pour le comptage et le label des exos
+   \newcounter{trcptr}
+   \setcounter{trcptr}{1}
+   \newcommand{\newexo}[1]{\noindent \textbf{Exercice\ \thetrcptr\ :\ {#1}} \\ \addtocounter{trcptr}{1} \setcounter{trqu}{1}}
+
+%
+ \def\pl{\partial}
+ \def\unj{u^{n}_{j}}
+ \def\unpj{u^{n+1}_{j}}
+ \def\unmj{u^{n-1}_{j}}
+ \def\unjp{u^{n}_{j+1}}
+ \def\unjm{u^{n}_{j-1}}
+ \def\unpjm{u^{n+1}_{j-1}}
+ \def\unpjp{u^{n+1}_{j+1}}
+ \def\dx{\Delta x}
+ \def\dt{\Delta t}
+ \def\dudt{\frac{\partial u}{\partial t}}
+
+\title{Computer Training Sessions}
+
+\date{January, 11, 2018}
+\begin{document}
+\maketitle
+  \section{Burgers' equation}
+
+Let consider the inviscid Burgers' equation:
+ \[
+ \dudt + \frac{\pl}{\pl x}\frac{u^2}{2} =0 \qquad x\in ]0,L[ , \; t>0
+ \]
+ with periodic limit conditions: $u(0,t)=u(L,t)$\\
+ %
+and the initial condition is a sinusoid  $u(x,0)=\sin 2\pi x$.\vspace*{5mm}\\
+%
+We discretize this equation using a finite difference method on a regular grid with steps of $\Delta x$ in space and $\Delta t$ in time. Let note $\unj$ the approximation of $u(j\Delta x, n\Delta t)$, and let's make use of the Lax-Friedrich scheme:
+ \[
+ \frac{\unpj-\frac{1}{2}(\unjm+\unjp)}{\dt}+\frac{ \frac{1}{2} ({\unjp})^2 - \frac{1}{2} ({\unjm})^2}{2\dx}=0
+ \]
+
+The explicit form of the equation is then:
+ \[
+ \unpj=\frac{1}{2}(\unjm+\unjp)+\frac{\dt}{4\dx}(({\unjm})^2-({\unjp})^2)
+ \]
+%
+%
+ \section{Presentation of the \texttt{python} nootebooks}
+%
+ This practical training is done with python, this programming language has the advantage to propose a simple syntax for matrix handling. The main scripts you will have to play with are available as jupyter notebooks:
+ 
+\begin{itemize}
+	\item \texttt{run\_free\_model.ipynb} : performs a free run (without assimilation):
+	\item \texttt{run\_analyse.ipynb}: handles a BLUE analysis experiment;
+	\item \texttt{run\_EKF.ipynb} : handles the assimilation with an Extended Kalman Filter.
+	\item \texttt{test\_var.ipynb} : tests the cost function gradient.
+ 	\item \texttt{run\_var.ipynb}: handles the variational assimilation itself;
+ \end{itemize}
+They make use of a set pre-programmed python objects and methods gathered in several files:
+ 
+ \begin{itemize}
+ \item \texttt{burgers.py} : three functions: \texttt{burgers}, which performs one time step of the Burgers' model; \texttt{burger\_adj}, which performs one adjoint step; \texttt{burger\_adj\_cont}, which performs one adjoint step using the {\em continuous} adjoint method for deriving the adjoint.
+ \item \texttt{gausscov.py}: creates a gaussian error covariance matrix as well as its inverse and its decomposition (LU or SVD)
+ \item \texttt{obsopt.py}: manage the observation opertator
+  \item \texttt{analyseKF.py}: performs the BLUE analysis;
+ \item \texttt{simvar.py} : computes the cost function and its gradient
+ \end{itemize}
+%
+In the notebooks, you will be asked to tweak several parameters:
+\begin{itemize}
+  \item \texttt{sigmao}: specified standard deviation for the observation error;
+   \item \texttt{sigmab}: specified standard deviation for the background error;
+   \item \texttt{Lb}: Correlation scales for the background error;
+   \item \texttt{lprecond} (for variational method only): flag for the use or not of the preconditionning by $\sqrt{B}$ for the minimization;
+   \item \texttt{iobstsub}: subsampling in time of the observations;
+   \item \texttt{iobsxsub}: subsampling in space of the observations;
+ \end{itemize}
+%
+\section{Kalman filtering}
+
+\subsection{BLUE analysis}
+
+We work with
+script \texttt{run\_analyse.py} : we choose a true state, from which we extract a background state and a set of observations. We then perform a BLUE analysis.
+Initial values are sigmao=0.1 ; sigmab=0.5 ; Lb=0.025 ; iobsxsub=8.
+The script creates 3 graphic windows: (0) the true state, the background state and the analyzed state. The stars indicate the observed points; (1) the correction brought by the analysis. The circles at $y=-0.5$ indicate the observed points ; (2) the background error covariance matrix.  \\
+
+\begin{enumerate}
+\item What is the observation operator $H$ ?  After the script has been run, check that it is the same as the $H$ operator already coded.
+\item Visualize $P^f$ and look at the effect of the error covariances in the analysis. 
+\item Run the system with the following sets of parameter values, and interpret the results:
+   \begin{itemize}
+    \item sigmao=0.1 ; sigmab=0.5 ; Lb=0.000025 ; iobsxsub=8 ;
+    \item sigmao=0.1 ; sigmab=0.005 ; Lb=0.025 ; iobsxsub=8 ;
+    \item sigmao=0.001 ; sigmab=0.5 ; Lb=0.025 ; iobsxsub=8 ;
+    \item sigmao=0.001 ; sigmab=0.5 ; Lb=0.000025 ; iobsxsub=1 ;
+    \item sigmao=0.1 ; sigmab=0.5 ; Lb=0.000025 ; iobsxsub=1 .
+   \end{itemize}
+\end{enumerate}
+
+\subsection{Kalman filtering}
+
+We use now the
+script \texttt{run\_EKF.py} :  we choose a true state, from which we extract a background state, a set of observations, and the corresponding error covariances.
+Initial values are sigmao=0.1 ; sigmab=0.5 ; Lb=0.025 ; iobsxsub=4.
+The script creates 8 graphic windows. \\
+
+\begin{enumerate}
+  \item The forecast, the analysis and the true state at final time are plotted in window 1. Explain why the analysis and the forecast are similar, and why they are not exactly equal to the true state. 
+\item Improve this by choosing sigmao=0.01. What is the limit beyond which data assimilation is no more really useful ? 
+ \item A limit in this system may be that the model error is not taken into account. Should it be ? 
+ \item Code a model error. The easiest way consists in applying some inflation to the covariances (one line of code). One can also build a  $Q$ matrix, to add it to $P$, and then to decompose again $P$.
+ \item Does the model error help solving the preceding problems ?
+
+\end{enumerate}
+\section{Variational Data Assimilation} 
+ %
+In this case, the data assimilation is done through the minimization of the cost function:
+$$
+J(u^0) = J_b(u^0) + J_o(u^0) = \frac{1}{2}\, (u^0-u^b)^TB^{-1}(u^0-u^b) + \frac{1}{2}\, \sum_{k=0}^N  (H_k u^k-u^k_{\hbox{\scriptsize obs}})^TR^{-1}(H_k u^k-u^k_{\hbox{\scriptsize obs}})
+$$
+%
+with
+%
+$$
+B(x_i, x_j) = \sigma_B^2 \exp\left(-\frac{(x_i-x_j)^2}{2L_B^2}\right)
+$$
+%
+or
+%
+$$
+B_{i,j} = \sigma_B^2 \exp\left(-\frac{((i-j)\Delta x)^2}{2L_B^2}\right)
+$$
+%
+and
+%
+$$ R=\sigma_R^2 Id $$
+%
+%
+\begin{enumerate}
+\item  Check that the computation of the gradient thanks to the adjoint model is correct (gradient test). Redo the same using \texttt{burger\_adj\_cont} in \texttt{simvar}.
+\item Perform one data assimilation experiment (using \texttt{run\_{var}}) with the continuous adjoint discretized and then the same one using the adjoint of the discrete model.
+\item Use or not the $\sqrt{B}$ preconditionning and look at the influence of this choice on the decreasing rate of the cost function using  \texttt{run\_{var}}.
+\item Visualize the structure of the background error covariance matrix by doing an experiment with a single observation (${\tt iobsxsub}\geq1+{\tt nx}/{2}$). at the beginning of the time window ({\tt nt}=0, {\tt iobstsub}=1). Check that the influence of the observation becomes more local when one reduces the correlation length scale $L_B$. Try with one observation at the end of the time window ({\tt iobstsub}={\tt nt}). 
+
+Then go back to the original settings.
+
+\item Check that the analysis becomes closer to the observation when $\sigma_B$ becomes larger and that the analysis becomes closer to the background when $\sigma_R$ becomes larger. Is it always true? Why?
+
+\item Play with the sampling of the observations in order to determine the minimal number of observations required to correct efficiently the background, and the sampling from which it is not necessary to add observation anymore.
+
+Does it depend on $B$ settings ?
+
+\item From a case that is working reasonably well, try to increase the length of the assimilation window. 
+
+\item What would be the possible solution(s) to cope with longer assimilation window? If time permits, try implementing one 
+%
+\end{enumerate}
+
+ 
+\end{document}
